@@ -1,6 +1,6 @@
+## 4K隠し画像メーカー (Hidden Image Maker) - 説明
 
-4K 隠し画像メーカー (Hidden Image Maker) - 説明書
-
+https://natsume-denpa.github.io/4K/
 
 縮小表示（スマホのタイムラインやプレビュー）では「ただのグレーのノイズ」に見え、
 等倍表示（4Kモニターや拡大表示）した瞬間に絵柄が浮かび上がる画像を作成するWebツールです。
