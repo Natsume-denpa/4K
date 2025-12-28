@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>4K 隠し画像メーカー</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --text: #e5e5e5;
+            --text-sub: #a3a3a3;
+            --border: #333;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 700;
+            background: linear-gradient(90deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p.subtitle {
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .upload-text {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .control-item {
+            margin-bottom: 20px;
+        }
+        .control-item:last-child {
+            margin-bottom: 0;
+        }
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .label-text {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .value-badge {
+            background: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #444;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .toggle-switch input { 
+            opacity: 0; 
+            width: 0; 
+            height: 0; 
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #444;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .btn {
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        .btn-secondary {
+            background-color: #444;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #555;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preview-container {
+            text-align: center;
+            position: relative;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .placeholder-text {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            z-index: 10;
+            display: none;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>4K 隠し画像メーカー</h1>
+            <p class="subtitle">縮小すると消え、等倍で見ると現れる画像</p>
+        </header>
+
+        <div class="card">
+            <!-- Upload -->
+            <div class="upload-zone" id="dropZone">
+                <span class="upload-icon">📁</span>
+                <span class="upload-text">タップして画像を選択</span>
+                <div style="font-size:0.8rem; color:#888; margin-top:5px;">またはドラッグ＆ドロップ</div>
+                <input type="file" id="uploadInput" accept="image/*">
+            </div>
+
+            <!-- Controls -->
+            <div style="margin-top: 24px;">
+                <div class="control-item">
+                    <div class="label-row">
+                        <span class="label-text">2値化の閾値</span>
+                        <span id="threshVal" class="value-badge">128</span>
+                    </div>
+                    <input type="range" id="thresholdRange" min="0" max="255" value="128">
+                </div>
+
+                <div class="control-item">
+                    <div class="label-row">
+                        <span class="label-text">色を反転 (黒背景用など)</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="invertInput">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button id="processBtn" class="btn btn-secondary">再生成</button>
+                    <button id="downloadBtn" class="btn btn-primary" disabled>保存する</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card preview-container">
+            <div id="loading" class="loading-overlay">
+                <div class="spinner"></div>
+                <span>4K処理中...</span>
+            </div>
+            <div id="placeholder" class="placeholder-text">ここにプレビューが表示されます</div>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <p style="font-size:0.8rem; color:#666; margin-top:10px; text-align:center;">
+                ※プレビューは縮小されているため、グレーや縞模様に見えます。<br>保存して等倍で確認してください。
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const uploadInput = document.getElementById('uploadInput');
+        const dropZone = document.getElementById('dropZone');
+        const thresholdRange = document.getElementById('thresholdRange');
+        const threshVal = document.getElementById('threshVal');
+        const invertInput = document.getElementById('invertInput');
+        const processBtn = document.getElementById('processBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const loadingOverlay = document.getElementById('loading');
+        const placeholder = document.getElementById('placeholder');
+
+        const TARGET_MIN_SIDE = 4096;
+        let originalImage = null;
+
+        uploadInput.addEventListener('change', handleFileSelect);
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                uploadInput.files = e.dataTransfer.files;
+                handleFileSelect({ target: uploadInput });
+            }
+        });
+
+        thresholdRange.addEventListener('input', () => {
+            threshVal.textContent = thresholdRange.value;
+        });
+        thresholdRange.addEventListener('change', triggerProcess); 
+
+        processBtn.addEventListener('click', triggerProcess);
+        invertInput.addEventListener('change', triggerProcess);
+
+        downloadBtn.addEventListener('click', () => {
+            if (!originalImage) return;
+            const link = document.createElement('a');
+            const timestamp = new Date().getTime();
+            link.download = `hidden_art_4k_${timestamp}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // ,,Ծ‸Ծ,,
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            downloadBtn.disabled = true;
+            
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    triggerProcess();
+                }
+                img.src = ev.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function triggerProcess() {
+            if (!originalImage) return;
+
+            loadingOverlay.style.display = 'flex';
+            canvas.style.display = 'none';
+
+            setTimeout(() => {
+                processImage();
+                loadingOverlay.style.display = 'none';
+                canvas.style.display = 'block';
+                placeholder.style.display = 'none';
+                downloadBtn.disabled = false;
+            }, 50);
+        }
+
+        function processImage() {
+            const w = originalImage.width;
+            const h = originalImage.height;
+
+            let scale;
+            if (w < h) {
+                scale = TARGET_MIN_SIDE / w;
+            } else {
+                scale = TARGET_MIN_SIDE / h;
+            }
+
+            const targetW = Math.round(w * scale);
+            const targetH = Math.round(h * scale);
+
+            canvas.width = targetW;
+            canvas.height = targetH;
+
+            ctx.drawImage(originalImage, 0, 0, targetW, targetH);
+            const imageData = ctx.getImageData(0, 0, targetW, targetH);
+            const data = imageData.data;
+            const len = data.length;
+            const threshold = parseInt(thresholdRange.value, 10);
+            const isInvert = invertInput.checked;
+
+            for (let i = 0; i < len; i += 4) {
+                const pixelIndex = i / 4;
+                const y = Math.floor(pixelIndex / targetW);
+
+                const brightness = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+                
+                let isDarkPixel = brightness < threshold;
+                if (isInvert) isDarkPixel = !isDarkPixel;
+
+                const isBgBlack = (y % 2 === 0);
+
+                if (isDarkPixel) {
+                    data[i]     = 127; 
+                    data[i + 1] = 127; 
+                    data[i + 2] = 127; 
+                    data[i + 3] = 255; 
+                } else {
+                    if (isBgBlack) {
+                        data[i]     = 0;
+                        data[i + 1] = 0;
+                        data[i + 2] = 0;
+                        data[i + 3] = 255;
+                    } else {
+                        data[i]     = 255;
+                        data[i + 1] = 255;
+                        data[i + 2] = 255;
+                        data[i + 3] = 255;
+                    }
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+    </script>
+</body>
+</html>
