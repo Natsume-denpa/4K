@@ -1,4 +1,4 @@
-## 4K隠し画像メーカー (Hidden Image Maker) - 説明
+## 4K隠し画像メーカー 
 
 https://natsume-denpa.github.io/4K/
 
